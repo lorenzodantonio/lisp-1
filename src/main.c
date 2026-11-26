@@ -2,27 +2,41 @@
 #include "env.h"
 #include "eval.h"
 #include "obj.h"
-
+#include "parser.h"
+#include "operative.h"
+#include "applicative.h"
 #include <stdio.h>
 
-int main(void) {
+int main(int argc, char **argv) {
+  if (argc < 2) {
+    fprintf(stderr, "missing filename\n");
+    return -1;
+  }
+
   struct env dict;
   env_init(&dict);
 
-  env_register(&dict, create_symbol("+"), create_function(sum));
+  env_register(&dict, create_symbol("$define!", 8), create_operative(define));
+  env_register(&dict, create_symbol("display", 7), create_applicative(display));
+  env_register(&dict, create_symbol("+", 1), create_applicative(sum));
 
-  struct obj *prg = create_cons_cell(
-      create_symbol("+"),
-      create_cons_cell(
-          create_number(1),
-          create_cons_cell(create_number(2),
-                           create_cons_cell(create_number(3),
-                                            create_cons_cell(create_number(4),
-                                                             create_nil())))));
+  char *src = loadfile(argv[1]);
+  if (src == NULL) {
+    return -1;
+  }
 
-  struct obj *result = eval(prg, &dict);
-  print_obj(result);
-  printf("\n");
+  struct parser p;
+  parser_init(&p, src);
+
+  struct obj *parsed;
+  while ((parsed = parse(&p)) != NULL) {
+    struct obj *value = eval(parsed, &dict);
+    if (value->type == OBJ_TYPE_ERROR) {
+      print_obj(value);
+    }
+  }
+
+  parser_deinit(&p);
 
   return 0;
 }

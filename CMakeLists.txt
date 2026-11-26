@@ -10,6 +10,9 @@ add_executable(lang
     src/env.c
     src/eval.c
     src/builtin.c
+    src/parser.c
+    src/operative.c
+    src/applicative.c
 )
 
 target_include_directories(lang PRIVATE include)

@@ -19,27 +19,34 @@ struct obj *create_number(int n) {
   return o;
 }
 
-struct obj *create_string(char *s) {
+struct obj *create_string(char *s, size_t len) {
   struct obj *o = create_obj(OBJ_TYPE_STRING);
-  o->str.value = strdup(s);
-  o->str.len = strlen(s);
+  o->str.value = malloc(len + 1);
+  memcpy(o->str.value, s, len);
+  o->str.value[len] = '\0';
   return o;
 }
 
-struct obj *create_symbol(char *s) {
-  struct obj *o = create_string(s);
+struct obj *create_symbol(char *s, size_t len) {
+  struct obj *o = create_string(s, len);
   o->type = OBJ_TYPE_SYMBOL;
   return o;
 }
 
-struct obj *create_function(struct obj *(*fn)(struct obj *args)) {
-  struct obj *o = create_obj(OBJ_TYPE_FUNCTION);
-  o->fn = fn;
+struct obj *create_operative(struct obj *(*native)(struct obj *args, struct env *env)) {
+  struct obj *o = create_obj(OBJ_TYPE_OPERATIVE);
+  o->operative.native = native;
+  return o;
+}
+
+struct obj *create_applicative(struct obj *(*native)(struct obj *args)) {
+  struct obj *o = create_obj(OBJ_TYPE_APPLICATIVE);
+  o->applicative = native;
   return o;
 }
 
 struct obj *create_error(char *msg) {
-  struct obj *o = create_string(msg);
+  struct obj *o = create_string(msg, strlen(msg));
   o->type = OBJ_TYPE_ERROR;
   return o;
 }
@@ -58,6 +65,10 @@ struct obj *create_nil(void) {
 }
 
 void print_obj(struct obj *o) {
+  if (o == NULL) {
+    return;
+  }
+
   switch (o->type) {
   case OBJ_TYPE_NUMBER:
     printf("%d", o->num);
@@ -77,7 +88,10 @@ void print_obj(struct obj *o) {
     printf(")");
     break;
   }
-  case OBJ_TYPE_FUNCTION:
+  case OBJ_TYPE_OPERATIVE:
+    printf("struct obj *(*fn)(struct obj *args, struct env *env);)");
+    break;
+  case OBJ_TYPE_APPLICATIVE:
     printf("struct obj *(*fn)(struct obj *args)");
     break;
   case OBJ_TYPE_NIL:
@@ -86,4 +100,5 @@ void print_obj(struct obj *o) {
   default:
     printf("unknown type");
   }
+  printf("\n");
 }

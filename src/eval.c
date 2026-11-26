@@ -1,4 +1,6 @@
+#include "env.h"
 #include "eval.h"
+
 
 struct obj *eval(struct obj *prg, struct env *e) {
   switch (prg->type) {
@@ -11,10 +13,15 @@ struct obj *eval(struct obj *prg, struct env *e) {
       return op;
     }
 
-    if (op->type != OBJ_TYPE_FUNCTION) {
+    if (op->type != OBJ_TYPE_OPERATIVE && op->type != OBJ_TYPE_APPLICATIVE) {
       return create_error("operator expected");
     }
 
+    if (op->type == OBJ_TYPE_OPERATIVE) {
+      return op->operative.native(cdr, e);
+    }
+
+    // APPLICATIVE
     struct obj *args = NULL;
     struct obj *tail = create_nil();
 
@@ -35,8 +42,8 @@ struct obj *eval(struct obj *prg, struct env *e) {
         cur = cur->cons_cell.cdr;
       }
     }
-
-    return op->fn(tail);
+    // native C applicative TODO: implement user-defined
+    return op->applicative(tail);
   }
   case OBJ_TYPE_SYMBOL: {
     struct obj *value = env_lookup(e, prg);
